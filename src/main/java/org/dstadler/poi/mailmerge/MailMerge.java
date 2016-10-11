@@ -10,7 +10,12 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hwpf.usermodel.CharacterRun;
+import org.apache.poi.hwpf.usermodel.Paragraph;
+import org.apache.poi.hwpf.usermodel.Range;
+import org.apache.poi.hwpf.usermodel.Section;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.dstadler.commons.logging.jdk.LoggerFactory;
@@ -61,7 +66,7 @@ public class MailMerge {
 
 		// now open the word file and apply the changes
 		try (InputStream is = new FileInputStream(wordTemplate)) {
-			try (XWPFDocument doc = new XWPFDocument(is)) {
+			try (HWPFDocument doc = new HWPFDocument(is)) {
 				// apply the lines and concatenate the results into the document
 				applyLines(data, doc);
 
@@ -71,6 +76,56 @@ public class MailMerge {
 			    }
 			}
 		}
+	}
+
+	private void applyLines(Data dataIn, HWPFDocument doc){
+		List<String> headers = dataIn.getHeaders();
+		for(List<String> data : dataIn.getData()) {
+			log.info("Applying to template: " + data);
+
+			for(int fieldNr = 0;fieldNr < headers.size();fieldNr++) {
+				String header = headers.get(fieldNr);
+				String value = data.get(fieldNr);
+
+				// ignore columns without headers as we cannot match them
+				if(header == null) {
+					continue;
+				}
+
+				// use empty string for data-cells that have no value
+				if(value == null) {
+					value = "";
+				}
+
+//				replaced = replaced.replace("${" + header + "}", value);
+				replaceText(doc,"${" + header + "}", value);
+			}
+
+//			// check for missed replacements or formatting which interferes
+//			if(replaced.contains("${")) {
+//				log.warning("Still found template-marker after doing replacement: " +
+//						StringUtils.abbreviate(StringUtils.substring(replaced, replaced.indexOf("${")), 200));
+//			}
+		}
+	}
+
+	private HWPFDocument replaceText(HWPFDocument doc, String findText, String replaceText){
+		Range r1 = doc.getRange();
+
+		for (int i = 0; i < r1.numSections(); ++i ) {
+			Section s = r1.getSection(i);
+			for (int x = 0; x < s.numParagraphs(); x++) {
+				Paragraph p = s.getParagraph(x);
+				for (int z = 0; z < p.numCharacterRuns(); z++) {
+					CharacterRun run = p.getCharacterRun(z);
+					String text = run.text();
+					if(text.contains(findText)) {
+						run.replaceText(findText, replaceText);
+					}
+				}
+			}
+		}
+		return doc;
 	}
 
 	private void applyLines(Data dataIn, XWPFDocument doc) throws XmlException, IOException {
