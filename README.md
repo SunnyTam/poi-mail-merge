@@ -7,7 +7,7 @@ and does not produce spurious strange results and also does not need re-configur
 
 ## How it works
 
-All you need is a Word-Document in Excel >= 2003 format (.docx) which acts as template and an Excel .xls/.xlsx or CSV file which contains one row for each time the template should be populated.
+All you need is a Word-Document in Excel >= 2003 format (.doc) which acts as template and an Excel .xls/.xlsx or CSV file which contains one row for each time the template should be populated.
 
 The word-document can contain template-markers (enclosed in ${...}) for things that should be replaced, e.g. "${first-name} ${last-name}".
 
